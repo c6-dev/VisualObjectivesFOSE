@@ -1,0 +1,4 @@
+LIBRARY	"F3VisualObjectives"
+EXPORTS
+FOSEPlugin_Query			@1
+FOSEPlugin_Load				@2
