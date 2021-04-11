@@ -1,5 +1,5 @@
 #pragma once
-
+// TODO options
 namespace VisualObjectives
 {
 	bool Init();
@@ -26,19 +26,17 @@ namespace VisualObjectives
 	float GetObjectDimensions(TESObjectREFR* ref, int axis) {	
 		if (ref->IsActor())
 		{
-			float scale = ref->scale;
 			Actor* actor = (Actor*)ref;
 			if (actor->baseProcess && (actor->baseProcess->processLevel <= 1))
 			{
 				BSBound* bounds = ((MiddleHighProcess*)actor->baseProcess)->boundingBox;
-				if (bounds) return (bounds->dimensions[axis] * 2 * scale);
+				if (bounds) return (bounds->dimensions[axis] * 2 * ref->scale);
 			}
 		}
 		else {
-			float scale = 1;
 			TESBoundObject* object = DYNAMIC_CAST(ref->baseForm, TESForm, TESBoundObject);
 			if (!object) return true;
-			return abs(object->bounds[axis + 3] - object->bounds[axis]) * scale;
+			return abs(object->bounds[axis + 3] - object->bounds[axis]) * 1;
 		}
 		return 0.0;
 	}
@@ -59,7 +57,7 @@ namespace VisualObjectives
 		return true;
 	}
 
-	void setVisible(bool isVisible) {
+	void SetVisible(bool isVisible) {
 		SetTileComponentValue(mainTile, "_JVOVisible", isVisible ? 1 : 0);
 		mainTile->SetFloat(kTileValue_visible, isVisible, 1);
 	}
@@ -160,7 +158,7 @@ namespace VisualObjectives
 	void Update() {
 
 		if (g_interfaceManager->currentMode == 2) JVOVisible = false;
-		setVisible(JVOVisible);
+		SetVisible(JVOVisible);
 		SetTileComponentValue(mainTile, "_JVOInCombat", g_thePlayer->pcInCombat ? 1 : 0);
 		SetTileComponentValue(mainTile, "_JVOAlphaCW", compassTile->GetValueFloat(kTileValue_alpha));
 		TESObjectREFR* customMarker = g_thePlayer->unk66C ? *(g_thePlayer->unk668) : g_thePlayer->unk650;
@@ -236,7 +234,7 @@ namespace VisualObjectives
 	}
 
 	Tile* __cdecl LoadingScreenHook(int id) {
-		if (initialized) setVisible(false);
+		if (initialized) SetVisible(false);
 		return CdeclCall<Tile*>(0xBEAF00, id);
 	}
 }
