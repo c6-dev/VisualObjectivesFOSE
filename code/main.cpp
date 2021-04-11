@@ -45,7 +45,6 @@ extern "C"
 };
 
 
-
 void DeferredInit()
 {
 	g_thePlayer = PlayerCharacter::GetSingleton();

@@ -17,7 +17,6 @@
 #include "settings.h"
 
 bool versionCheck(const FOSEInterface* fose);
-void writePatches();
 void DeferredInit();
 void DeferredUpdate();
 TimeGlobal* timeGlobals = (TimeGlobal*)0x1090BA0;

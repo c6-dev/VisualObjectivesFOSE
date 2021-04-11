@@ -22,16 +22,23 @@ namespace VisualObjectives
 		mainTile = hudMenuTile->ReadXML("data\\menus\\prefabs\\JVO\\JVO.xml");
 		return mainTile != NULL;
 	}
-	float GetObjectDimensions(TESObjectREFR* ref, int axis) {
-		float scale = ref->scale;
+
+	float GetObjectDimensions(TESObjectREFR* ref, int axis) {	
 		if (ref->IsActor())
 		{
+			float scale = ref->scale;
 			Actor* actor = (Actor*)ref;
 			if (actor->baseProcess && (actor->baseProcess->processLevel <= 1))
 			{
 				BSBound* bounds = ((MiddleHighProcess*)actor->baseProcess)->boundingBox;
 				if (bounds) return (bounds->dimensions[axis] * 2 * scale);
 			}
+		}
+		else {
+			float scale = 1;
+			TESBoundObject* object = DYNAMIC_CAST(ref->baseForm, TESForm, TESBoundObject);
+			if (!object) return true;
+			return abs(object->bounds[axis + 3] - object->bounds[axis]) * scale;
 		}
 		return 0.0;
 	}
@@ -41,7 +48,7 @@ namespace VisualObjectives
 
 		if (!InjectMenuXML(hud))
 		{
-			MessageBoxA(nullptr, "Visual Objectives failed to initialize", "JVO", MB_ICONERROR);
+			MessageBoxA(nullptr, "Visual Objectives failed to initialize", "F3VisualObjectives", MB_ICONERROR);
 			return false;
 		}
 		playerMarkerTile = mainTile->GetChild("JVOPlayerMarker");
@@ -51,10 +58,12 @@ namespace VisualObjectives
 		initialized = true;
 		return true;
 	}
+
 	void setVisible(bool isVisible) {
 		SetTileComponentValue(mainTile, "_JVOVisible", isVisible ? 1 : 0);
 		mainTile->SetFloat(kTileValue_visible, isVisible, 1);
 	}
+
 	void AddVisualObjective(TESObjectREFR* ref) {
 		HUDMainMenu* hud = HUDMainMenu::GetSingleton();
 		char objTileName[15];
@@ -147,6 +156,7 @@ namespace VisualObjectives
 		JVOVisible = true;
 
 	}
+
 	void Update() {
 
 		if (g_interfaceManager->currentMode == 2) JVOVisible = false;
@@ -224,6 +234,7 @@ namespace VisualObjectives
 
 		objectiveIndex = 0;
 	}
+
 	Tile* __cdecl LoadingScreenHook(int id) {
 		if (initialized) setVisible(false);
 		return CdeclCall<Tile*>(0xBEAF00, id);
