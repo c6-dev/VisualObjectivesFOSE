@@ -53,7 +53,7 @@ namespace VisualObjectives
 		else {
 			TESBoundObject* object = DYNAMIC_CAST(ref->baseForm, TESForm, TESBoundObject);
 			if (!object) return 0.0;
-			return abs(object->bounds[axis + 3] - object->bounds[axis]) * 1;
+			return abs(object->bounds[axis + 3] - object->bounds[axis+1]) * 1;
 		}
 		return 0.0;
 	}
@@ -150,9 +150,9 @@ namespace VisualObjectives
 		}
 
 		float distance = g_thePlayer->GetDistance(ref);
-
-		SetTileComponentValue(objectiveTile, "_JVOInDistance", (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0));
-
+		int inDistance = (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0);
+		SetTileComponentValue(objectiveTile, "_JVOInDistance", inDistance);
+		objectiveTile->SetFloat(kTileValue_visible, inDistance);
 		float dX = 0, dY = 0, dZ = 0;
 		if (ref->IsActor()) {
 			NiAVObject* niBlock = ref->GetNiBlock("Bip01 Head");
@@ -192,7 +192,7 @@ namespace VisualObjectives
 
 		if (!customMarker->GetNiNode()) {
 			NiPoint3* pos = customMarker->GetPos();
-			float posXY[2] = { pos->x, pos->y };
+			float posXY[2] = { pos->x, pos->y }; 
 			g_TES->GetTerrainHeight(posXY, &deltaZ);
 			if (deltaZ <= 0.0) deltaZ = g_thePlayer->GetPos()->z;
 		}
@@ -212,7 +212,9 @@ namespace VisualObjectives
 		SetTileComponentValue(playerMarkerTile, "_Y", y);
 
 		float distance = GetDistance2D(g_thePlayer, customMarker);
-		SetTileComponentValue(playerMarkerTile, "_JVOInDistance", (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0));
+		int inDistance = (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0);
+		SetTileComponentValue(playerMarkerTile, "_JVOInDistance", inDistance);
+		playerMarkerTile->SetFloat(kTileValue_visible, inDistance);
 		SetDistanceText(playerMarkerTile, customMarker, distance);
 	}
 	void Update() {
@@ -227,7 +229,12 @@ namespace VisualObjectives
 		SetTileComponentValue(mainTile, "_JVOAlphaCW", compassTile->GetValueFloat(kTileValue_alpha));
 
 		TESObjectREFR* customMarker = g_thePlayer->unk66C ? *(g_thePlayer->unk668) : g_thePlayer->unk650;
-		if (customMarker) AddCustomObjective(customMarker);
+		if (customMarker) {
+			AddCustomObjective(customMarker);
+		}
+		else {
+			playerMarkerTile->SetFloat(kTileValue_visible, 0);
+		}
 
 		tList <BGSQuestObjective::Target>* targets = GetQuestObjectives();
 

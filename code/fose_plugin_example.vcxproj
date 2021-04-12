@@ -78,7 +78,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "C:\GOG\Fallout 3\Data\fose\plugins\$(TargetFileName)"</Command>
+      <Command>copy "$(TargetPath)" "%LOCALAPPDATA%\ModOrganizer\Fallout 3\mods\Visual Objectives\fose\plugins\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -101,7 +101,7 @@
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "C:\GOG\Fallout 3\Data\fose\plugins\$(TargetFileName)"</Command>
+      <Command>copy "$(TargetPath)" "%LOCALAPPDATA%\ModOrganizer\Fallout 3\mods\Visual Objectives\fose\plugins\$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
