@@ -1,5 +1,5 @@
 #pragma once
-// TODO options
+
 #define GetShouldAttack(a, b, result)  CdeclCall<bool>(0x50FF60, (Actor*)a, (Actor*)b, 0, &result)
 #define GetInFaction(a, b) ThisCall<bool>(0x6F8FF0, (Actor*)a, b)
 #define GetQuestObjectives() ThisCall<tList<BGSQuestObjective::Target>*>(0x76CF30, g_thePlayer);
@@ -66,14 +66,17 @@ namespace VisualObjectives
 		playerMarkerTile = mainTile->GetChild("JVOPlayerMarker");
 		Tile* hitPoints = hudMenuTile->GetChild("HitPoints");
 		compassTile = hitPoints->GetChild("compass_window");
-		jvoRect = hud->AddTileFromTemplate(mainTile, "JVOTemp", 0);
+		jvoRect = hud->AddTileFromTemplate(mainTile, "JVOTemp", 0); 
+		SetTileComponentValue(mainTile, "_JVOWidthBase", width);
+		SetTileComponentValue(mainTile, "_JVOHeightBase", width);
+		SetTileComponentValue(mainTile, "_JVODistanceVisible", distanceTextMode);
+		SetTileComponentValue(mainTile, "_JVOTextVisible", showNameMode);
 		WriteRelCall(0x659ED8, (UInt32)LoadingScreenHook);
 		initialized = true;
 		return true;
 	}
 
 	void AddVisualObjective(TESObjectREFR* ref) {
-		HUDMainMenu* hud = HUDMainMenu::GetSingleton();
 		char objTileName[15];
 		sprintf(objTileName, "JVOMarker%i", objectiveIndex);
 		Tile* objectiveTile = jvoRect->GetChild(objTileName);
@@ -81,8 +84,8 @@ namespace VisualObjectives
 			objectiveTile = hud->AddTileFromTemplate(jvoRect, "JVOMarker", 0);
 			objectiveTile->name.Set(objTileName);
 		}
-		objectiveTile->SetFloat(kTileValue_visible, 1, true);
 		float distance = g_thePlayer->GetDistance(ref);
+		SetTileComponentValue(objectiveTile, "_JVOInDistance", (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0));
 		float dX = 0, dY = 0, dZ = 0;
 		if (ref->IsActor()) {
 			NiAVObject* niBlock = ref->GetNiBlock("Bip01 Head");
@@ -108,10 +111,9 @@ namespace VisualObjectives
 		}
 		SetTileComponentValue(objectiveTile, "_X", x);
 		SetTileComponentValue(objectiveTile, "_Y", y);
-		SetTileComponentValue(objectiveTile, "_JVOInDistance", 1);
 		float inFocus = objectiveTile->GetComponentValue("_JVOInFocus")->num;
 		char distanceText[50];
-		if (inFocus + 2 > 1) {
+		if (inFocus + distanceTextMode > 1) {
 			if (distance > 1000000) {
 				strcpy(distanceText, "Far away");
 			}
@@ -165,13 +167,15 @@ namespace VisualObjectives
 		}
 		SetTileComponentValue(objectiveTile, "_JVOHostile", isHostileColor);
 		objectiveIndex++;
-		JVOVisible = true;
 
 	}
 
 	void Update() {
 
 		if (g_interfaceManager->currentMode == 2) JVOVisible = false;
+		else if (!visibleSighting && ((Actor*)g_thePlayer)->baseProcess->IsAiming()) JVOVisible = false;
+		else if (!visibleScoped && hud->isUsingScope) JVOVisible = false;
+		else JVOVisible = true;
 		SetVisible(JVOVisible);
 		SetTileComponentValue(mainTile, "_JVOInCombat", g_thePlayer->pcInCombat ? 1 : 0);
 		SetTileComponentValue(mainTile, "_JVOAlphaCW", compassTile->GetValueFloat(kTileValue_alpha));
@@ -197,11 +201,11 @@ namespace VisualObjectives
 			}
 			SetTileComponentValue(playerMarkerTile, "_X", x);
 			SetTileComponentValue(playerMarkerTile, "_Y", y);
-			SetTileComponentValue(playerMarkerTile, "_JVOInDistance", 1);
 			float distance = GetDistance2D(g_thePlayer, customMarker);
+			SetTileComponentValue(playerMarkerTile, "_JVOInDistance", (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0));
 			float inFocus = playerMarkerTile->GetComponentValue("_JVOInFocus")->num;
 			char distanceText[50];
-			if (inFocus + 2 > 1) {
+			if (inFocus + distanceTextMode > 1) {
 				if (distance > 1000000) {
 					strcpy(distanceText, "Far away");
 				}
