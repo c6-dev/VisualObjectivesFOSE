@@ -10,6 +10,7 @@ namespace VisualObjectives
 {
 	bool Init();
 	void Update();
+	void SetDistanceText(Tile* tile, TESObjectREFR* ref, float distance);
 	Tile* mainTile = NULL;
 	Tile* playerMarkerTile = NULL;
 	Tile* compassTile = NULL;
@@ -19,6 +20,8 @@ namespace VisualObjectives
 	bool initialized = false;
 	int objectiveIndex = 0;
 	int lastIndex = 0;
+	char distanceText[50];
+	char tileName[20];
 
 	void SetVisible(bool isVisible) {
 		SetTileComponentValue(mainTile, "_JVOVisible", isVisible ? 1 : 0);
@@ -56,8 +59,6 @@ namespace VisualObjectives
 	}
 
 	bool Init() {
-		HUDMainMenu* hud = HUDMainMenu::GetSingleton();
-
 		if (!InjectMenuXML(hud))
 		{
 			MessageBoxA(nullptr, "Visual Objectives failed to initialize", "F3VisualObjectives", MB_ICONERROR);
@@ -68,24 +69,90 @@ namespace VisualObjectives
 		compassTile = hitPoints->GetChild("compass_window");
 		jvoRect = hud->AddTileFromTemplate(mainTile, "JVOTemp", 0); 
 		SetTileComponentValue(mainTile, "_JVOWidthBase", width);
-		SetTileComponentValue(mainTile, "_JVOHeightBase", width);
+		SetTileComponentValue(mainTile, "_JVOHeightBase", height);
 		SetTileComponentValue(mainTile, "_JVODistanceVisible", distanceTextMode);
 		SetTileComponentValue(mainTile, "_JVOTextVisible", showNameMode);
 		WriteRelCall(0x659ED8, (UInt32)LoadingScreenHook);
 		initialized = true;
 		return true;
 	}
+	void SetDistanceText(Tile* tile, TESObjectREFR* ref, float distance) {
+		float inFocus = tile->GetComponentValue("_JVOInFocus")->num;
+		if (inFocus + distanceTextMode > 1) {
+			if (distance > 1000000) {
+				strcpy(distanceText, "Far away");
+			}
+			else if (measurementSystem == 1) {
+				sprintf(distanceText, "%.f m.", distance / 69.99104);
+			}
+			else if (measurementSystem == 2) {
+				sprintf(distanceText, "%.f ft.", distance / 21.333);
+			}
+			else if (measurementSystem == 3) {
+				sprintf(distanceText, "%.f un.", distance);
+			}
+		}
+		SetTileComponentValue(tile, "_JVODistance", distanceText);
+	}
+
+	bool GetIsHostileColor(TESObjectREFR* ref) {
+
+		double shouldAttack = 0;
+
+		if (ref->IsActor()) {
+
+			if (!((Actor*)ref)->GetDead() && ((Actor*)g_thePlayer)->IsSneaking() && !ref->IsCreature()) {
+				return true;
+			}
+			else if ((GetShouldAttack(ref, g_thePlayer, shouldAttack) && shouldAttack > 0) || ((Actor*)ref)->IsInCombatWith((Actor*)g_thePlayer)) {
+				return true;
+			}
+			else if (IsFactionEnemy((Actor*)ref, (Actor*)g_thePlayer) || IsFactionEnemy((Actor*)g_thePlayer, (Actor*)ref)) {
+				return true;
+			}
+		}
+
+		else if (ref->baseForm->typeID >= 0x15 && ref->baseForm->typeID < 0x29) {
+
+			TESForm* refOwner = nullptr, * cellOwner = nullptr;
+			ExtraOwnership* xOwn = (ExtraOwnership*)ref->extraDataList.GetByType(kExtraData_Ownership);
+			if (xOwn) refOwner = xOwn->owner;
+			if (ref->parentCell && ref->parentCell->IsInterior()) {
+				xOwn = (ExtraOwnership*)ref->parentCell->extraDataList.GetByType(kExtraData_Ownership);
+				if (xOwn) cellOwner = xOwn->owner;
+			}
+			if (!refOwner && cellOwner != nullptr) {
+				if ((cellOwner->refID != PlayerFaction && cellOwner->refID != PlayerRef) || (cellOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, cellOwner))) {
+					return true;
+				}
+			}
+			else if (refOwner) {
+				if ((refOwner->refID != PlayerFaction && refOwner->refID != PlayerRef) || (refOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, refOwner))) {
+					return true;
+				}
+			}
+			if (ref->baseForm->typeID == kFormType_Door) {
+				ExtraLock* xLock = (ExtraLock*)ref->extraDataList.GetByType(kExtraData_Lock);
+				if (xLock && xLock->data->flags & 1 == 0) return false;
+			}
+		}
+
+		return false;
+	}
 
 	void AddVisualObjective(TESObjectREFR* ref) {
-		char objTileName[15];
-		sprintf(objTileName, "JVOMarker%i", objectiveIndex);
-		Tile* objectiveTile = jvoRect->GetChild(objTileName);
+
+		sprintf(tileName, "JVOMarker%i", objectiveIndex);
+		Tile* objectiveTile = jvoRect->GetChild(tileName);
 		if (objectiveTile == nullptr) {
 			objectiveTile = hud->AddTileFromTemplate(jvoRect, "JVOMarker", 0);
-			objectiveTile->name.Set(objTileName);
+			objectiveTile->name.Set(tileName);
 		}
+
 		float distance = g_thePlayer->GetDistance(ref);
+
 		SetTileComponentValue(objectiveTile, "_JVOInDistance", (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0));
+
 		float dX = 0, dY = 0, dZ = 0;
 		if (ref->IsActor()) {
 			NiAVObject* niBlock = ref->GetNiBlock("Bip01 Head");
@@ -102,6 +169,7 @@ namespace VisualObjectives
 			dY = 0;
 			dZ = 0.5 * GetObjectDimensions(ref, 2) + 10;
 		}
+
 		NiPoint3 w2s(ref->posX + dX, ref->posY + dY, ref->posZ + dZ);
 		float x, y, z;
 		bool isOnScreen = WorldToScreen(&w2s, x, y, z, 2);
@@ -109,67 +177,44 @@ namespace VisualObjectives
 			x = -1;
 			y = -1;
 		}
+
 		SetTileComponentValue(objectiveTile, "_X", x);
 		SetTileComponentValue(objectiveTile, "_Y", y);
-		float inFocus = objectiveTile->GetComponentValue("_JVOInFocus")->num;
-		char distanceText[50];
-		if (inFocus + distanceTextMode > 1) {
-			if (distance > 1000000) {
-				strcpy(distanceText, "Far away");
-			}
-			else if (measurementSystem == 1) {
-				sprintf(distanceText, "%.f m.", distance / 69.99104);
-			}
-			else if (measurementSystem == 2) {
-				sprintf(distanceText, "%.f ft.", distance / 21.333);
-			}
-			else if (measurementSystem == 3) {
-				sprintf(distanceText, "%.f un.", distance);
-			}
-		}
-		SetTileComponentValue(objectiveTile, "_JVODistance", distanceText);
+		SetDistanceText(objectiveTile, ref, distance);
 		SetTileComponentValue(objectiveTile, "_JVOText", ref->GetTheName());
-		int isHostileColor = 0;
-		double shouldAttack = 0;
-		if (ref->IsActor()) {
-			if (!((Actor*)ref)->GetDead() && ((Actor*)g_thePlayer)->IsSneaking() && !ref->IsCreature()) {
-				isHostileColor = 1;
-			}
-			else if ((GetShouldAttack(ref, g_thePlayer, shouldAttack) && shouldAttack > 0) || ((Actor*)ref)->IsInCombatWith((Actor*)g_thePlayer)) {
-				isHostileColor = 1;
-			}
-			else if (IsFactionEnemy((Actor*)ref, (Actor*)g_thePlayer) || IsFactionEnemy((Actor*)g_thePlayer, (Actor*)ref)) {
-				isHostileColor = 1;
-			}
-		}
-		else if (ref->baseForm->typeID >= 0x15 && ref->baseForm->typeID < 0x29) {
-			TESForm* refOwner = nullptr, * cellOwner = nullptr;
-			ExtraOwnership* xOwn = (ExtraOwnership*)ref->extraDataList.GetByType(kExtraData_Ownership);
-			if (xOwn) refOwner = xOwn->owner;
-			if (ref->parentCell && ref->parentCell->IsInterior()) {
-				xOwn = (ExtraOwnership*)ref->parentCell->extraDataList.GetByType(kExtraData_Ownership);
-				if (xOwn) cellOwner = xOwn->owner;
-			}
-			if (!refOwner && cellOwner != nullptr) {
-				if ((cellOwner->refID != PlayerFaction && cellOwner->refID != PlayerRef) || (cellOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, cellOwner))) {
-					isHostileColor = 1;
-				}
-			}
-			else if (refOwner) {
-				if ((refOwner->refID != PlayerFaction && refOwner->refID != PlayerRef) || (refOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, refOwner))) {
-					isHostileColor = 1;
-				}
-			}
-			if (ref->baseForm->typeID == kFormType_Door) {
-				ExtraLock* xLock = (ExtraLock*)ref->extraDataList.GetByType(kExtraData_Lock);
-				if (xLock && xLock->data->flags & 1 == 0) isHostileColor = 0;
-			}
-		}
-		SetTileComponentValue(objectiveTile, "_JVOHostile", isHostileColor);
+		SetTileComponentValue(objectiveTile, "_JVOHostile", GetIsHostileColor(ref) ? 1 : 0);
 		objectiveIndex++;
 
 	}
+	void AddCustomObjective(TESObjectREFR* customMarker) {
+		JVOVisible = true;
+		float deltaZ = 0.0;
 
+		if (!customMarker->GetNiNode()) {
+			NiPoint3* pos = customMarker->GetPos();
+			float posXY[2] = { pos->x, pos->y };
+			g_TES->GetTerrainHeight(posXY, &deltaZ);
+			if (deltaZ <= 0.0) deltaZ = g_thePlayer->GetPos()->z;
+		}
+		else {
+			deltaZ = 0.5 * GetObjectDimensions(customMarker, 2) + 10;
+		}
+
+		NiPoint3 w2s(customMarker->posX, customMarker->posY, customMarker->posZ + deltaZ);
+		float x, y, z;
+		bool isOnScreen = WorldToScreen(&w2s, x, y, z, 2);
+		if (!isOnScreen) {
+			x = -1;
+			y = -1;
+		}
+
+		SetTileComponentValue(playerMarkerTile, "_X", x);
+		SetTileComponentValue(playerMarkerTile, "_Y", y);
+
+		float distance = GetDistance2D(g_thePlayer, customMarker);
+		SetTileComponentValue(playerMarkerTile, "_JVOInDistance", (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0));
+		SetDistanceText(playerMarkerTile, customMarker, distance);
+	}
 	void Update() {
 
 		if (g_interfaceManager->currentMode == 2) JVOVisible = false;
@@ -177,57 +222,19 @@ namespace VisualObjectives
 		else if (!visibleScoped && hud->isUsingScope) JVOVisible = false;
 		else JVOVisible = true;
 		SetVisible(JVOVisible);
+
 		SetTileComponentValue(mainTile, "_JVOInCombat", g_thePlayer->pcInCombat ? 1 : 0);
 		SetTileComponentValue(mainTile, "_JVOAlphaCW", compassTile->GetValueFloat(kTileValue_alpha));
+
 		TESObjectREFR* customMarker = g_thePlayer->unk66C ? *(g_thePlayer->unk668) : g_thePlayer->unk650;
-		if (customMarker) {
-			JVOVisible = true;
-			float deltaZ = 0.0;
-			if (!customMarker->GetNiNode()) {
-				NiPoint3* pos = customMarker->GetPos();
-				float posXY[2] = { pos->x, pos->y };
-				g_TES->GetTerrainHeight(posXY, &deltaZ);
-				if (deltaZ <= 0.0) deltaZ = g_thePlayer->GetPos()->z;
-			}
-			else {
-				deltaZ = 0.5 * GetObjectDimensions(customMarker, 2) + 10;
-			}
-			NiPoint3 w2s(customMarker->posX, customMarker->posY, customMarker->posZ + deltaZ);
-			float x, y, z;
-			bool isOnScreen = WorldToScreen(&w2s, x, y, z, 2);
-			if (!isOnScreen) {
-				x = -1;
-				y = -1;
-			}
-			SetTileComponentValue(playerMarkerTile, "_X", x);
-			SetTileComponentValue(playerMarkerTile, "_Y", y);
-			float distance = GetDistance2D(g_thePlayer, customMarker);
-			SetTileComponentValue(playerMarkerTile, "_JVOInDistance", (((minDistance == 0 || minDistance <= distance) && (maxDistance == 0 || maxDistance >= distance)) ? 1 : 0));
-			float inFocus = playerMarkerTile->GetComponentValue("_JVOInFocus")->num;
-			char distanceText[50];
-			if (inFocus + distanceTextMode > 1) {
-				if (distance > 1000000) {
-					strcpy(distanceText, "Far away");
-				}
-				else if (measurementSystem == 1) {
-					sprintf(distanceText, "%.f m.", distance / 69.99104);
-				}
-				else if (measurementSystem == 2) {
-					sprintf(distanceText, "%.f ft.", distance / 21.333);
-				}
-				else if (measurementSystem == 3) {
-					sprintf(distanceText, "%.f un.", distance);
-				}
-			}
-			SetTileComponentValue(playerMarkerTile, "_JVODistance", distanceText);
-		}
+		if (customMarker) AddCustomObjective(customMarker);
+
 		tList <BGSQuestObjective::Target>* targets = GetQuestObjectives();
+
 		if (targets)
 		{
-
 			for (tList<BGSQuestObjective::Target>::Iterator iter = targets->Begin(); !iter.End(); ++iter)
 			{
-
 				BGSQuestObjective::Target* data = iter.Get();
 				if (data)
 				{
@@ -238,11 +245,10 @@ namespace VisualObjectives
 					else {
 						AddVisualObjective(objective->teleportLinks.data[0].door);
 					}
-
 				}
 			}
-
 		}
+
 		int i = targets == nullptr ? 0 : targets->Count();
 		int j = jvoRect->children.Size();
 		if (j > i) {
@@ -256,7 +262,5 @@ namespace VisualObjectives
 
 		objectiveIndex = 0;
 	}
-
-	
 }
 
