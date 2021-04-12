@@ -1,5 +1,11 @@
 #pragma once
 // TODO options
+#define GetShouldAttack(a, b, result)  CdeclCall<bool>(0x50FF60, (Actor*)a, (Actor*)b, 0, &result)
+#define GetInFaction(a, b) ThisCall<bool>(0x6F8FF0, (Actor*)a, b)
+#define GetQuestObjectives() ThisCall<tList<BGSQuestObjective::Target>*>(0x76CF30, g_thePlayer);
+#define PlayerFaction 0x1B2A4
+#define PlayerRef 0x7
+
 namespace VisualObjectives
 {
 	bool Init();
@@ -35,7 +41,7 @@ namespace VisualObjectives
 		}
 		else {
 			TESBoundObject* object = DYNAMIC_CAST(ref->baseForm, TESForm, TESBoundObject);
-			if (!object) return true;
+			if (!object) return 0.0;
 			return abs(object->bounds[axis + 3] - object->bounds[axis]) * 1;
 		}
 		return 0.0;
@@ -105,21 +111,25 @@ namespace VisualObjectives
 			if (distance > 1000000) {
 				strcpy(distanceText, "Far away");
 			}
-			else {
+			else if (measurementSystem == 1) {
 				sprintf(distanceText, "%.f m.", distance / 69.99104);
+			}
+			else if (measurementSystem == 2) {
+				sprintf(distanceText, "%.f ft.", distance / 21.333);
+			}
+			else if (measurementSystem == 3) {
+				sprintf(distanceText, "%.f un.", distance);
 			}
 		}
 		SetTileComponentValue(objectiveTile, "_JVODistance", distanceText);
-		char text[50];
-		strcpy(text, ref->GetTheName());
-		SetTileComponentValue(objectiveTile, "_JVOText", text);
+		SetTileComponentValue(objectiveTile, "_JVOText", ref->GetTheName());
 		int isHostileColor = 0;
 		double shouldAttack = 0;
 		if (ref->IsActor()) {
 			if (!((Actor*)ref)->GetDead() && ((Actor*)g_thePlayer)->IsSneaking() && !ref->IsCreature()) {
 				isHostileColor = 1;
 			}
-			else if ((CdeclCall<bool>(0x50FF60, (Actor*)ref, (Actor*)g_thePlayer, 0, &shouldAttack) && shouldAttack > 0) || ((Actor*)ref)->IsInCombatWith((Actor*)g_thePlayer)) {
+			else if ((GetShouldAttack(ref, g_thePlayer, shouldAttack) && shouldAttack > 0) || ((Actor*)ref)->IsInCombatWith((Actor*)g_thePlayer)) {
 				isHostileColor = 1;
 			}
 			else if (IsFactionEnemy((Actor*)ref, (Actor*)g_thePlayer) || IsFactionEnemy((Actor*)g_thePlayer, (Actor*)ref)) {
@@ -135,16 +145,16 @@ namespace VisualObjectives
 				if (xOwn) cellOwner = xOwn->owner;
 			}
 			if (!refOwner && cellOwner != nullptr) {
-				if ((cellOwner->refID != 0x1B2A4 && cellOwner->refID != 0x7) || (cellOwner->typeID == 0x8 && ThisCall<bool>(0x6F8FF0, (Actor*)g_thePlayer, cellOwner))) {
+				if ((cellOwner->refID != PlayerFaction && cellOwner->refID != PlayerRef) || (cellOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, cellOwner))) {
 					isHostileColor = 1;
 				}
 			}
 			else if (refOwner) {
-				if ((refOwner->refID != 0x1B2A4 && refOwner->refID != 0x7) || (refOwner->typeID == 0x8 && ThisCall<bool>(0x6F8FF0, (Actor*)g_thePlayer, refOwner))) {
+				if ((refOwner->refID != PlayerFaction && refOwner->refID != PlayerRef) || (refOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, refOwner))) {
 					isHostileColor = 1;
 				}
 			}
-			if (ref->baseForm->typeID == 0x1C) {
+			if (ref->baseForm->typeID == kFormType_Door) {
 				ExtraLock* xLock = (ExtraLock*)ref->extraDataList.GetByType(kExtraData_Lock);
 				if (xLock && xLock->data->flags & 1 == 0) isHostileColor = 0;
 			}
@@ -197,7 +207,7 @@ namespace VisualObjectives
 			}
 			SetTileComponentValue(playerMarkerTile, "_JVODistance", distanceText);
 		}
-		tList <BGSQuestObjective::Target>* targets = ThisCall<tList<BGSQuestObjective::Target>*>(0x76CF30, g_thePlayer);
+		tList <BGSQuestObjective::Target>* targets = GetQuestObjectives();
 		if (targets)
 		{
 
