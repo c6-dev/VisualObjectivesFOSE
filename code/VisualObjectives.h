@@ -59,6 +59,7 @@ namespace VisualObjectives
 		Tile* hitPoints = hudMenuTile->GetChild("HitPoints");
 		compassTile = hitPoints->GetChild("compass_window");
 		jvoRect = hud->AddTileFromTemplate(mainTile, "JVOTemp", 0);
+		WriteRelCall(0x659ED8, (UInt32)VisualObjectives::LoadingScreenHook);
 		initialized = true;
 		return true;
 	}
@@ -201,8 +202,14 @@ namespace VisualObjectives
 				if (distance > 1000000) {
 					strcpy(distanceText, "Far away");
 				}
-				else {
+				else if (measurementSystem == 1) {
 					sprintf(distanceText, "%.f m.", distance / 69.99104);
+				}
+				else if (measurementSystem == 2) {
+					sprintf(distanceText, "%.f ft.", distance / 21.333);
+				}
+				else if (measurementSystem == 3) {
+					sprintf(distanceText, "%.f un.", distance);
 				}
 			}
 			SetTileComponentValue(playerMarkerTile, "_JVODistance", distanceText);
@@ -244,7 +251,7 @@ namespace VisualObjectives
 	}
 
 	Tile* __cdecl LoadingScreenHook(int id) {
-		if (initialized) SetVisible(false);
+		SetVisible(false);
 		return CdeclCall<Tile*>(0xBEAF00, id);
 	}
 }

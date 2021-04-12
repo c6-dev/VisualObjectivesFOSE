@@ -39,7 +39,6 @@ extern "C"
 		JGGameCamera.CamPos = new JGCameraPosition;
 		WriteRelJump(0xAAEDB6, (UInt32)NiCameraGetAltHook);
 		WriteRelJump(0xAAEDC1, (UInt32)NiCameraGetAltHook);
-		WriteRelCall(0x659ED8, (UInt32)VisualObjectives::LoadingScreenHook);
 		return true;
 	}
 };
