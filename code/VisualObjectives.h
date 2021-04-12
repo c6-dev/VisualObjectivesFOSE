@@ -20,6 +20,14 @@ namespace VisualObjectives
 	int objectiveIndex = 0;
 	int lastIndex = 0;
 
+	void SetVisible(bool isVisible) {
+		SetTileComponentValue(mainTile, "_JVOVisible", isVisible ? 1 : 0);
+		mainTile->SetFloat(kTileValue_visible, isVisible, 1);
+	}
+	Tile* __cdecl LoadingScreenHook(int id) {
+		SetVisible(false);
+		return CdeclCall<Tile*>(0xBEAF00, id);
+	}
 	bool InjectMenuXML(Menu* menu)
 	{
 		if (!menu) return false;
@@ -59,14 +67,9 @@ namespace VisualObjectives
 		Tile* hitPoints = hudMenuTile->GetChild("HitPoints");
 		compassTile = hitPoints->GetChild("compass_window");
 		jvoRect = hud->AddTileFromTemplate(mainTile, "JVOTemp", 0);
-		WriteRelCall(0x659ED8, (UInt32)VisualObjectives::LoadingScreenHook);
+		WriteRelCall(0x659ED8, (UInt32)LoadingScreenHook);
 		initialized = true;
 		return true;
-	}
-
-	void SetVisible(bool isVisible) {
-		SetTileComponentValue(mainTile, "_JVOVisible", isVisible ? 1 : 0);
-		mainTile->SetFloat(kTileValue_visible, isVisible, 1);
 	}
 
 	void AddVisualObjective(TESObjectREFR* ref) {
@@ -250,9 +253,6 @@ namespace VisualObjectives
 		objectiveIndex = 0;
 	}
 
-	Tile* __cdecl LoadingScreenHook(int id) {
-		SetVisible(false);
-		return CdeclCall<Tile*>(0xBEAF00, id);
-	}
+	
 }
 
