@@ -5,7 +5,7 @@
 #define GetQuestObjectives() ThisCall<tList<BGSQuestObjective::Target>*>(0x76CF30, g_thePlayer);
 #define PlayerFaction 0x1B2A4
 #define PlayerRef 0x7
-
+#define VATSCameraMode *(UInt32*)0x108D0A0
 namespace VisualObjectives
 {
 	bool Init();
@@ -65,7 +65,14 @@ namespace VisualObjectives
 			return false;
 		}
 		playerMarkerTile = mainTile->GetChild("JVOPlayerMarker");
-		Tile* hitPoints = hudMenuTile->GetChild("HitPoints");
+		Tile* hpWrap = hudMenuTile->GetChild("HP_Wrap");
+		Tile* hitPoints;
+		if (hpWrap) {
+			hitPoints = hpWrap->GetChild("HitPoints");
+		}
+		else {
+			hitPoints = hudMenuTile->GetChild("HitPoints");
+		}
 		compassTile = hitPoints->GetChild("compass_window");
 		jvoRect = hud->AddTileFromTemplate(mainTile, "JVOTemp", 0); 
 		SetTileComponentValue(mainTile, "_JVOWidthBase", width);
@@ -222,6 +229,7 @@ namespace VisualObjectives
 		if (g_interfaceManager->currentMode == 2) JVOVisible = false;
 		else if (!visibleSighting && ((Actor*)g_thePlayer)->baseProcess->IsAiming()) JVOVisible = false;
 		else if (!visibleScoped && hud->isUsingScope) JVOVisible = false;
+		else if (VATSCameraMode == 4) JVOVisible = false;
 		else JVOVisible = true;
 		SetVisible(JVOVisible);
 
