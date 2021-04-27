@@ -104,8 +104,10 @@ namespace VisualObjectives
 
 	bool GetIsHostileColor(TESObjectREFR* ref) {
 
-		double shouldAttack = 0;
-
+		if (ref->baseForm->typeID == kFormType_Door) {
+			ExtraLock* xLock = (ExtraLock*)ref->extraDataList.GetByType(kExtraData_Lock);
+			if (!xLock || (xLock->data->flags & 1 == 0)) return false;
+		}
 		if (ref->IsActor()) {
 
 			if (!((Actor*)ref)->GetDead() && ((Actor*)g_thePlayer)->IsSneaking() && !ref->IsCreature()) {
@@ -138,10 +140,7 @@ namespace VisualObjectives
 					return true;
 				}
 			}
-			if (ref->baseForm->typeID == kFormType_Door) {
-				ExtraLock* xLock = (ExtraLock*)ref->extraDataList.GetByType(kExtraData_Lock);
-				if (xLock && xLock->data->flags & 1 == 0) return false;
-			}
+			
 		}
 
 		return false;
