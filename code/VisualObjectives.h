@@ -111,37 +111,27 @@ namespace VisualObjectives
 		}
 		if (ref->IsActor()) {
 
-			if (!((Actor*)ref)->GetDead() && ((Actor*)g_thePlayer)->IsSneaking() && !ref->IsCreature()) {
-				return true;
-			}
-			else if ((GetShouldAttack(ref, g_thePlayer, shouldAttack) && shouldAttack > 0) || ((Actor*)ref)->IsInCombatWith((Actor*)g_thePlayer)) {
-				return true;
-			}
-			else if (IsFactionEnemy((Actor*)ref, (Actor*)g_thePlayer) || IsFactionEnemy((Actor*)g_thePlayer, (Actor*)ref)) {
+			if ((!((Actor*)ref)->GetDead() && ((Actor*)g_thePlayer)->IsSneaking() && !ref->IsCreature())
+			|| ((GetShouldAttack(ref, g_thePlayer, shouldAttack) && shouldAttack > 0) || ((Actor*)ref)->IsInCombatWith((Actor*)g_thePlayer)) 
+			|| (IsFactionEnemy((Actor*)ref, (Actor*)g_thePlayer) || IsFactionEnemy((Actor*)g_thePlayer, (Actor*)ref))) {
 				return true;
 			}
 		}
 
 		else if (ref->baseForm->typeID >= 0x15 && ref->baseForm->typeID < 0x29) {
 
-			TESForm* refOwner = nullptr, * cellOwner = nullptr;
+			TESForm* owner = nullptr;
 			ExtraOwnership* xOwn = (ExtraOwnership*)ref->extraDataList.GetByType(kExtraData_Ownership);
-			if (xOwn) refOwner = xOwn->owner;
-			if (ref->parentCell && ref->parentCell->IsInterior()) {
+			if (xOwn) owner = xOwn->owner;
+			if (!owner && ref->parentCell && ref->parentCell->IsInterior()) {
 				xOwn = (ExtraOwnership*)ref->parentCell->extraDataList.GetByType(kExtraData_Ownership);
-				if (xOwn) cellOwner = xOwn->owner;
+				if (xOwn) owner = xOwn->owner;
 			}
-			if (!refOwner && cellOwner != nullptr) {
-				if ((cellOwner->refID != PlayerFaction && cellOwner->refID != PlayerRef) || (cellOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, cellOwner))) {
+			if (owner) {
+				if ((owner->refID != PlayerFaction && owner->refID != PlayerRef) || (owner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, owner))) {
 					return true;
 				}
-			}
-			else if (refOwner) {
-				if ((refOwner->refID != PlayerFaction && refOwner->refID != PlayerRef) || (refOwner->typeID == kFormType_Faction && !GetInFaction(g_thePlayer, refOwner))) {
-					return true;
-				}
-			}
-			
+			}	
 		}
 
 		return false;
@@ -226,10 +216,10 @@ namespace VisualObjectives
 	}
 	void Update() {
 
-		if (g_interfaceManager->currentMode == 2) JVOVisible = false;
-		else if (!visibleSighting && ((Actor*)g_thePlayer)->baseProcess->IsAiming()) JVOVisible = false;
-		else if (!visibleScoped && hud->isUsingScope) JVOVisible = false;
-		else if (VATSCameraMode == 4) JVOVisible = false;
+		if ((g_interfaceManager->currentMode == 2)
+		|| (!visibleSighting && ((Actor*)g_thePlayer)->baseProcess->IsAiming()) 
+		|| (!visibleScoped && hud->isUsingScope)
+		|| (VATSCameraMode == 4)) JVOVisible = false;
 		else JVOVisible = true;
 		SetVisible(JVOVisible);
 
