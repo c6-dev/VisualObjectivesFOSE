@@ -463,9 +463,9 @@ public:
 	BoundObjectListHead		* head;		// 018
 	TESBoundObject			* prev;		// 01C
 	TESBoundObject			* next;		// 020
-	UInt16					bounds[6];	// 024
+	SInt16					bounds[6];	// 024
 };
-
+STATIC_ASSERT(sizeof(TESBoundObject) == 0x30);
 // C
 class TESFullName : public BaseFormComponent
 {

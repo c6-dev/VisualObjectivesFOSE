@@ -53,7 +53,7 @@ namespace VisualObjectives
 		else {
 			TESBoundObject* object = DYNAMIC_CAST(ref->baseForm, TESForm, TESBoundObject);
 			if (!object) return 0.0;
-			return abs(object->bounds[axis + 3] - object->bounds[axis+1]) * 1;
+			return abs(object->bounds[axis + 3] - object->bounds[axis]) * ref->scale;
 		}
 		return 0.0;
 	}
