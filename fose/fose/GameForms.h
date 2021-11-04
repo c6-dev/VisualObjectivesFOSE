@@ -2820,7 +2820,7 @@ public:
 	RefListPointerMap	* pointerMap064;	// 064 
 	BSPortalGraph		* portalGraph;		// 068
 	UInt32				unk06C;				// 06C
-	TESWaterForm		* waterFormFirst;	// 070
+	TESWorldSpace*		parent;				// 070
 	TESWaterForm		* waterFormLast;	// 074
 	float				unk078;				// 078
 	UInt32				unk07C;				// 07C

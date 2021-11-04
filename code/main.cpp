@@ -40,6 +40,7 @@ extern "C"
 		WriteRelJump(0xAAEDB6, (UInt32)NiCameraGetAltHook);
 		WriteRelJump(0xAAEDC1, (UInt32)NiCameraGetAltHook);
 		WriteRelJump(0xAAEB39, (UInt32)NiCameraGetAltHook);
+		WriteRelJump(0x65E13C, (UInt32)MarkerWorldspaceHook);
 		return true;
 	}
 };

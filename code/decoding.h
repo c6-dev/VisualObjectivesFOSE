@@ -1209,7 +1209,6 @@ public:
 };
 STATIC_ASSERT(sizeof(MapMenu) == 0x1F0);
 
-
 class NiTexturingProperty;
 struct FontHeightData
 {

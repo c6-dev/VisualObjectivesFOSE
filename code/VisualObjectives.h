@@ -23,14 +23,6 @@ namespace VisualObjectives
 	char distanceText[50];
 	char tileName[20];
 
-	void SetVisible(bool isVisible) {
-		SetTileComponentValue(mainTile, "_JVOVisible", isVisible ? 1 : 0);
-		mainTile->SetFloat(kTileValue_visible, isVisible, 1);
-	}
-	Tile* __cdecl LoadingScreenHook(int id) {
-		SetVisible(false);
-		return CdeclCall<Tile*>(0xBEAF00, id);
-	}
 	bool InjectMenuXML(Menu* menu)
 	{
 		if (!menu) return false;
@@ -79,7 +71,6 @@ namespace VisualObjectives
 		SetTileComponentValue(mainTile, "_JVOHeightBase", height);
 		SetTileComponentValue(mainTile, "_JVODistanceVisible", distanceTextMode);
 		SetTileComponentValue(mainTile, "_JVOTextVisible", showNameMode);
-		WriteRelCall(0x659ED8, (UInt32)LoadingScreenHook);
 		initialized = true;
 		return true;
 	}
@@ -184,7 +175,6 @@ namespace VisualObjectives
 
 	}
 	void AddCustomObjective(TESObjectREFR* customMarker) {
-		JVOVisible = true;
 		float deltaZ = 0.0;
 
 		if (!customMarker->GetNiNode()) {
@@ -215,13 +205,6 @@ namespace VisualObjectives
 		SetDistanceText(playerMarkerTile, customMarker, distance);
 	}
 	void Update() {
-
-		if ((g_interfaceManager->currentMode == 2)
-		|| (!visibleSighting && ((Actor*)g_thePlayer)->baseProcess->IsAiming()) 
-		|| (!visibleScoped && hud->isUsingScope)
-		|| (VATSCameraMode == 4)) JVOVisible = false;
-		else JVOVisible = true;
-		SetVisible(JVOVisible);
 
 		SetTileComponentValue(mainTile, "_JVOInCombat", g_thePlayer->pcInCombat ? 1 : 0);
 		SetTileComponentValue(mainTile, "_JVOAlphaCW", compassTile->GetValueFloat(kTileValue_alpha));
