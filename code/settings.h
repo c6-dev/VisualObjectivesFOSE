@@ -10,6 +10,7 @@ int minDistance = 0;
 int maxDistance = 0;
 int width = 0;
 int height = 0;
+float alpha = 0;
 extern HMODULE VOHandle;
 
 void handleIniOptions()
@@ -27,4 +28,6 @@ void handleIniOptions()
 	maxDistance = GetPrivateProfileInt("Main", "iMaxDisplayDistance", 0, iniPath);
 	width = GetPrivateProfileInt("Main", "iVisualObjectiveWidth", 24, iniPath);
 	height = GetPrivateProfileInt("Main", "iVisualObjectiveHeight", 36, iniPath);
+	int iAlpha = GetPrivateProfileInt("Main", "iVisualObjectiveAlpha", 30, iniPath);
+	alpha = (float)iAlpha / 100;
 }

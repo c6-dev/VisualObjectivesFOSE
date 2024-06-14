@@ -11,11 +11,11 @@ namespace VisualObjectives
 	bool Init();
 	void Update();
 	void SetDistanceText(Tile* tile, TESObjectREFR* ref, float distance);
-	Tile* mainTile = NULL;
-	Tile* playerMarkerTile = NULL;
-	Tile* compassTile = NULL;
-	Tile* hudMenuTile;
-	Tile* jvoRect = NULL;
+	Tile* mainTile = nullptr;
+	Tile* playerMarkerTile = nullptr;
+	Tile* compassTile = nullptr;
+	Tile* hudMenuTile = nullptr;
+	Tile* jvoRect = nullptr;
 	bool JVOVisible = false;
 	bool initialized = false;
 	int objectiveIndex = 0;
@@ -25,11 +25,10 @@ namespace VisualObjectives
 
 	bool InjectMenuXML(Menu* menu)
 	{
-		if (!menu) return false;
+		if (menu == nullptr || menu->tile == nullptr) return false;
 		hudMenuTile = menu->tile;
-
 		mainTile = hudMenuTile->ReadXML("data\\menus\\prefabs\\JVO\\JVO.xml");
-		return mainTile != NULL;
+		return mainTile != nullptr;
 	}
 
 	float GetObjectDimensions(TESObjectREFR* ref, int axis) {	
@@ -59,7 +58,7 @@ namespace VisualObjectives
 		playerMarkerTile = mainTile->GetChild("JVOPlayerMarker");
 		Tile* hpWrap = hudMenuTile->GetChild("HP_Wrap");
 		Tile* hitPoints;
-		if (hpWrap) {
+		if (hpWrap != nullptr) {
 			hitPoints = hpWrap->GetChild("HitPoints");
 		}
 		else {
@@ -71,6 +70,7 @@ namespace VisualObjectives
 		SetTileComponentValue(mainTile, "_JVOHeightBase", height);
 		SetTileComponentValue(mainTile, "_JVODistanceVisible", distanceTextMode);
 		SetTileComponentValue(mainTile, "_JVOTextVisible", showNameMode);
+		SetTileComponentValue(mainTile, "_JVOAlphaMult", alpha);
 		initialized = true;
 		return true;
 	}
@@ -98,13 +98,13 @@ namespace VisualObjectives
 		double shouldAttack = 0;
 		if (ref->baseForm->typeID == kFormType_Door) {
 			ExtraLock* xLock = (ExtraLock*)ref->extraDataList.GetByType(kExtraData_Lock);
-			if (!xLock || (xLock->data->flags & 1 == 0)) return false;
+			if (!xLock || ((xLock->data->flags & 1) == 0)) return false;
 		}
 		if (ref->IsActor()) {
-
-			if ((!((Actor*)ref)->GetDead() && ((Actor*)g_thePlayer)->IsSneaking() && !ref->IsCreature())
-			|| ((GetShouldAttack(ref, g_thePlayer, shouldAttack) && shouldAttack > 0) || ((Actor*)ref)->IsInCombatWith((Actor*)g_thePlayer)) 
-			|| (IsFactionEnemy((Actor*)ref, (Actor*)g_thePlayer) || IsFactionEnemy((Actor*)g_thePlayer, (Actor*)ref))) {
+			Actor* actor = (Actor*)ref;
+			if ((!actor->GetDead() && g_thePlayer->IsSneaking() && !ref->IsCreature())
+			|| ((GetShouldAttack(ref, g_thePlayer, shouldAttack) && shouldAttack > 0) || actor->IsInCombatWith(g_thePlayer))
+			|| (IsFactionEnemy(actor, g_thePlayer) || IsFactionEnemy(g_thePlayer, actor))) {
 				return true;
 			}
 		}
@@ -158,9 +158,9 @@ namespace VisualObjectives
 			dZ = 0.5 * GetObjectDimensions(ref, 2) + 10;
 		}
 
-		NiPoint3 w2s(ref->posX + dX, ref->posY + dY, ref->posZ + dZ);
+		NiPoint3 pos(ref->posX + dX, ref->posY + dY, ref->posZ + dZ);
 		float x, y, z;
-		bool isOnScreen = WorldToScreen(&w2s, x, y, z, 2);
+		bool isOnScreen = WorldToScreen(&pos, x, y, z, 2);
 		if (!isOnScreen) {
 			x = -1;
 			y = -1;
@@ -219,7 +219,7 @@ namespace VisualObjectives
 
 		tList <BGSQuestObjective::Target>* targets = GetQuestObjectives();
 
-		if (targets)
+		if (targets != nullptr && !targets->Empty())
 		{
 			for (tList<BGSQuestObjective::Target>::Iterator iter = targets->Begin(); !iter.End(); ++iter)
 			{
@@ -252,3 +252,8 @@ namespace VisualObjectives
 	}
 }
 
+void __fastcall VOUpdate(OSGlobals* a1, void* edx, int a2, int a3, int a4)
+{
+	if (VisualObjectives::initialized) VisualObjectives::Update();
+	ThisCall<void>(0x6ECBA0, a1, a2, a3, a4);
+}

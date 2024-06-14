@@ -34,13 +34,13 @@ extern "C"
 		auto commandExtender = GetModuleHandle("CommandExtender.dll");
 		auto callbackEx = (MainLoopAddCallbackEx)GetProcAddress(commandExtender, "MainLoopAddCallbackEx");
 		callbackEx(DeferredInit, NULL, 1, 1);
-		callbackEx(DeferredUpdate, NULL, 0, 1);
 		JGGameCamera.WorldMatrx = new JGWorldToScreenMatrix;
 		JGGameCamera.CamPos = new JGCameraPosition;
 		WriteRelJump(0xAAEDB6, (UInt32)NiCameraGetAltHook);
 		WriteRelJump(0xAAEDC1, (UInt32)NiCameraGetAltHook);
 		WriteRelJump(0xAAEB39, (UInt32)NiCameraGetAltHook);
 		WriteRelJump(0x65E13C, (UInt32)MarkerWorldspaceHook);
+		WriteRelCall(0x6ED789, (UInt32)VOUpdate);
 		return true;
 	}
 };
@@ -55,10 +55,7 @@ void DeferredInit()
 	VisualObjectives::Init();
 
 }
-void DeferredUpdate()
-{
-	if (VisualObjectives::initialized) VisualObjectives::Update();
-}
+
 
 bool versionCheck(const FOSEInterface* fose)
 {
