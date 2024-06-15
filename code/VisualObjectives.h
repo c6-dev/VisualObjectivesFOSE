@@ -205,7 +205,6 @@ namespace VisualObjectives
 		SetDistanceText(playerMarkerTile, customMarker, distance);
 	}
 	void Update() {
-
 		SetTileComponentValue(mainTile, "_JVOInCombat", g_thePlayer->pcInCombat ? 1 : 0);
 		SetTileComponentValue(mainTile, "_JVOAlphaCW", compassTile->GetValueFloat(kTileValue_alpha));
 
@@ -252,8 +251,9 @@ namespace VisualObjectives
 	}
 }
 
-void __fastcall VOUpdate(OSGlobals* a1, void* edx, int a2, int a3, int a4)
+void __fastcall VOUpdate(void* a1)
 {
+	
 	if (VisualObjectives::initialized) VisualObjectives::Update();
-	ThisCall<void>(0x6ECBA0, a1, a2, a3, a4);
+	return ThisCall<void>(0x61E380, a1);
 }
